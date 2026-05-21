@@ -28,9 +28,10 @@ export const LoginPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const success = await login(formData);
-    if (success) {
-      navigate('/dashboard');
+    try {
+      await login(formData);
+    } catch (err) {
+      console.error('Login failed:', err);
     }
   };
 

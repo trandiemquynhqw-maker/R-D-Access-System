@@ -50,5 +50,10 @@ export const accessService = {
   forceCloseSession: async (sessionId, notes) => {
     const response = await api.post(`/access/admin/sessions/${sessionId}/force-close`, { notes });
     return response.data;
+  },
+
+  getAuditorSessions: async (filters = {}) => {
+    const response = await api.get('/access/auditor/sessions', { params: filters });
+    return response.data;
   }
 };

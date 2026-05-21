@@ -1,4 +1,6 @@
 const ActivityLog = require('../models/ActivityLog');
+const AuditLog = require('../models/AuditLog');
+const { logActivity } = require('../utils/helpers');
 
 exports.getRecentActivity = async (req, res) => {
   try {
@@ -30,5 +32,25 @@ exports.getMyActivity = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ message: 'Failed to fetch your activity logs', error: error.message });
+  }
+};
+
+exports.getAuditLogs = async (req, res) => {
+  try {
+    if (req.user.role !== 'admin' && req.user.role !== 'auditor') {
+      return res.status(403).json({ message: 'Forbidden: Insufficient permissions' });
+    }
+
+    const { target_table } = req.query;
+    const auditLogs = await AuditLog.findAll({ target_table });
+
+    await logActivity(req.user.id, 'auditor_view_audit_logs', 'Đối soát viên tra cứu nhật ký thay đổi hệ thống (Audit Logs)');
+
+    res.json({
+      auditLogs,
+      count: auditLogs.length
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to fetch audit logs', error: error.message });
   }
 };

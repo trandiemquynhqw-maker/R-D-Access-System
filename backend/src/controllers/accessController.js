@@ -1,6 +1,7 @@
 const Session = require('../models/Session');
 const SessionDevice = require('../models/SessionDevice');
 const AccessLog = require('../models/AccessLog');
+const AuditLog = require('../models/AuditLog');
 const Device = require('../models/Device');
 const User = require('../models/User');
 const { logActivity } = require('../utils/helpers');
@@ -376,7 +377,23 @@ exports.forceCloseSession = async (req, res) => {
     const { id } = req.params;
     const { notes } = req.body;
 
+    const oldSession = await Session.findById(id);
+    if (!oldSession) {
+      return res.status(404).json({ message: 'Không tìm thấy phiên làm việc' });
+    }
+
     const session = await Session.forceClose(id, req.user.id, notes || 'Forced close by Admin');
+
+    // Log Audit
+    await AuditLog.create({
+      actor_id: req.user.id,
+      action: 'FORCE_CLOSE',
+      target_table: 'sessions',
+      target_id: id,
+      old_value: oldSession,
+      new_value: session,
+      reason: notes || 'Đóng phiên bắt buộc bởi Admin'
+    });
 
     await logActivity(req.user.id, 'force_close_session', `Quản trị viên đã đóng phiên thủ công cho người dùng`, { session_id: id });
 
@@ -389,6 +406,93 @@ exports.forceCloseSession = async (req, res) => {
     req.io.emit('occupancy_update');
   } catch (error) {
     res.status(500).json({ message: 'Đóng phiên thất bại', error: error.message });
+  }
+};
+
+exports.getAuditorSessions = async (req, res) => {
+  try {
+    if (req.user.role !== 'admin' && req.user.role !== 'auditor') {
+      return res.status(403).json({ message: 'Forbidden: Insufficient permissions' });
+    }
+
+    const { startDate, endDate, startHour, endHour, employeeSearch, deviceSearch } = req.query;
+    const pool = require('../config/database');
+
+    let query = `
+      SELECT 
+        s.*, 
+        u.full_name, u.username, u.employee_code, u.avatar_url,
+        s.face_image_url as entry_photo,
+        s.exit_face_image_url as exit_photo,
+        COALESCE(
+          (SELECT json_agg(json_build_object('brand', d2.brand, 'model_name', d2.model_name, 'serial_number', d2.serial_number, 'device_type', d2.device_type))
+           FROM session_devices sd 
+           JOIN devices d2 ON sd.device_id = d2.device_id 
+           WHERE sd.session_id = s.session_id), 
+          '[]'::json
+        ) as devices
+      FROM sessions s
+      JOIN users u ON s.user_id = u.user_id
+      WHERE 1=1
+    `;
+    const values = [];
+
+    if (startDate) {
+      query += ` AND s.check_in_at >= $${values.length + 1}`;
+      values.push(startDate);
+    }
+
+    if (endDate) {
+      query += ` AND s.check_in_at <= $${values.length + 1}`;
+      values.push(endDate);
+    }
+
+    if (employeeSearch) {
+      query += ` AND (u.full_name ILIKE $${values.length + 1} OR u.username ILIKE $${values.length + 1} OR u.employee_code ILIKE $${values.length + 1})`;
+      values.push(`%${employeeSearch}%`);
+    }
+
+    query += ' ORDER BY s.check_in_at DESC';
+    const result = await pool.query(query, values);
+    let sessions = result.rows;
+
+    if (startHour || endHour) {
+      sessions = sessions.filter(s => {
+        const checkInDate = new Date(s.check_in_at);
+        const hours = String(checkInDate.getHours()).padStart(2, '0');
+        const minutes = String(checkInDate.getMinutes()).padStart(2, '0');
+        const checkInTimeStr = `${hours}:${minutes}`;
+
+        if (startHour && checkInTimeStr < startHour) return false;
+        if (endHour && checkInTimeStr > endHour) return false;
+        return true;
+      });
+    }
+
+    if (deviceSearch) {
+      const searchLower = deviceSearch.toLowerCase();
+      sessions = sessions.filter(s => {
+        if (s.auth_method.toLowerCase().includes(searchLower)) return true;
+        if (s.devices && Array.isArray(s.devices)) {
+          return s.devices.some(d => 
+            (d.brand && d.brand.toLowerCase().includes(searchLower)) ||
+            (d.model_name && d.model_name.toLowerCase().includes(searchLower)) ||
+            (d.serial_number && d.serial_number.toLowerCase().includes(searchLower)) ||
+            (d.device_type && d.device_type.toLowerCase().includes(searchLower))
+          );
+        }
+        return false;
+      });
+    }
+
+    await logActivity(req.user.id, 'auditor_access', 'Đối soát viên tra cứu lịch sử ra vào');
+
+    res.json({
+      sessions,
+      count: sessions.length
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Lấy lịch sử đối soát thất bại', error: error.message });
   }
 };
 

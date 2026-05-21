@@ -1,6 +1,7 @@
 const Device = require('../models/Device');
 const QuickRegistration = require('../models/QuickRegistration');
 const Notification = require('../models/Notification');
+const AuditLog = require('../models/AuditLog');
 const { logActivity } = require('../utils/helpers');
 const qrcode = require('qrcode');
 
@@ -105,6 +106,18 @@ exports.updateDevice = async (req, res) => {
     }
 
     const updated = await Device.update(id, updateData);
+
+    // Log Audit
+    await AuditLog.create({
+      actor_id: req.user.id,
+      action: 'UPDATE',
+      target_table: 'devices',
+      target_id: id,
+      old_value: device,
+      new_value: updated,
+      reason: `Cập nhật thông tin thiết bị: ${updated.brand} ${updated.model_name}`
+    });
+
     await logActivity(req.user.id, 'device_update', `Cập nhật thông tin thiết bị: ${updated.brand} ${updated.model_name}`, { device_id: id });
     res.json({ message: 'Cập nhật thiết bị thành công', device: updated });
   } catch (error) {
@@ -126,6 +139,18 @@ exports.deleteDevice = async (req, res) => {
     }
 
     await Device.delete(id);
+
+    // Log Audit
+    await AuditLog.create({
+      actor_id: req.user.id,
+      action: 'DELETE',
+      target_table: 'devices',
+      target_id: id,
+      old_value: device,
+      new_value: null,
+      reason: `Xóa thiết bị: ${device.brand} ${device.model_name} (${device.serial_number})`
+    });
+
     await logActivity(req.user.id, 'device_deletion', `Xóa thiết bị: ${device.brand} ${device.model_name} (${device.serial_number})`, { device_id: id });
 
     res.json({ message: 'Xóa thiết bị thành công' });
@@ -175,6 +200,17 @@ exports.approveDevice = async (req, res) => {
       device_id: device.device_id
     });
 
+    // Log Audit
+    await AuditLog.create({
+      actor_id: req.user.id,
+      action: 'APPROVE',
+      target_table: 'quick_registrations',
+      target_id: id,
+      old_value: request,
+      new_value: { status: 'approved', device_id: device.device_id, comments },
+      reason: comments || 'Phê duyệt yêu cầu đăng ký thiết bị nhanh'
+    });
+
     res.json({ message: 'Phê duyệt thiết bị thành công', device });
 
     // Broadcast to kiosk
@@ -207,6 +243,17 @@ exports.rejectDevice = async (req, res) => {
       status: 'rejected',
       reviewed_by: req.user.id,
       reject_reason: comments
+    });
+
+    // Log Audit
+    await AuditLog.create({
+      actor_id: req.user.id,
+      action: 'REJECT',
+      target_table: 'quick_registrations',
+      target_id: id,
+      old_value: request,
+      new_value: { status: 'rejected', reject_reason: comments },
+      reason: comments || 'Từ chối đăng ký thiết bị nhanh'
     });
 
     res.json({ message: 'Từ chối thiết bị thành công' });

@@ -29,4 +29,7 @@ router.get('/verify/:identifier', requireRole(['security', 'manager', 'admin']),
 router.get('/admin/sessions', requireRole(['admin']), accessController.getAdminSessions);
 router.post('/admin/sessions/:id/force-close', requireRole(['admin']), accessController.forceCloseSession);
 
+// Auditor Sessions
+router.get('/auditor/sessions', requireRole(['admin', 'auditor']), accessController.getAuditorSessions);
+
 module.exports = router;

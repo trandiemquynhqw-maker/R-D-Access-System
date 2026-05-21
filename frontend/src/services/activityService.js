@@ -14,5 +14,10 @@ export const activityService = {
   getSystemHealth: async () => {
     const response = await api.get('/health');
     return response.data;
+  },
+
+  getAuditLogs: async (filters = {}) => {
+    const response = await api.get('/activity/audit-logs', { params: filters });
+    return response.data;
   }
 };

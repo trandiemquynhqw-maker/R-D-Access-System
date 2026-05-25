@@ -21,7 +21,7 @@ import Alert from '../components/Alert';
 import LoadingSpinner from '../components/LoadingSpinner';
 import * as XLSX from 'xlsx';
 import { jsPDF } from 'jspdf';
-import 'jspdf-autotable';
+import html2canvas from 'html2canvas';
 
 const AuditorDashboard = () => {
   const { t } = useTranslation();
@@ -110,8 +110,8 @@ const AuditorDashboard = () => {
         'Auth Mode': session.auth_method,
         'Assets Carried': carriedDevices,
         'Audit Notes/Reason': session.notes || '',
-        'Ingress Photo URL': session.entry_photo || 'No photo',
-        'Egress Photo URL': session.exit_photo || 'No photo'
+        'Ingress Photo URL': session.entry_photo ? (session.entry_photo.startsWith('data:') ? 'Captured (Base64)' : session.entry_photo) : 'No photo',
+        'Egress Photo URL': session.exit_photo ? (session.exit_photo.startsWith('data:') ? 'Captured (Base64)' : session.exit_photo) : 'No photo'
       };
     });
 
@@ -121,123 +121,123 @@ const AuditorDashboard = () => {
     XLSX.writeFile(wb, `ANZ_Physical_Access_Audit_${new Date().toISOString().slice(0, 10)}.xlsx`);
   };
 
-  // Export to PDF
-  const exportToPDF = () => {
-    const doc = new jsPDF({
-      orientation: 'landscape',
-      unit: 'mm',
-      format: 'a4'
-    });
-
-    // Add layout background accent
-    doc.setFillColor(248, 250, 252); // brand.slate
-    doc.rect(0, 0, 297, 210, 'F');
-
-    // Add corporate top bar
-    doc.setFillColor(0, 44, 119); // ANZ Navy
-    doc.rect(0, 0, 297, 24, 'F');
-
-    // Title
-    doc.setTextColor(255, 255, 255);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(15);
-    doc.text("HCLTech x ANZ Strategic Alliance - Innovation Nexus", 14, 10);
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
-    doc.setTextColor(220, 220, 220);
-    doc.text("HIGH-INTEGRITY E2E PHYSICAL ACCESS AUDIT LEDGER", 14, 15);
-    doc.text(`Run Date: ${new Date().toLocaleString()}`, 230, 15);
-
-    // Reset color
-    doc.setTextColor(26, 26, 26);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(12);
-    doc.text(t('auditor.dashboard_title', 'Đối soát Lịch sử Ra vào'), 14, 34);
-
-    // Metadata & Filters
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(8);
-    doc.setTextColor(99, 99, 99);
-    
-    let filterString = `Filters Applied: `;
-    if (startDate || endDate) filterString += `Date: [${startDate || 'Any'} to ${endDate || 'Any'}] | `;
-    if (startHour || endHour) filterString += `Hours: [${startHour || '00:00'} to ${endHour || '23:59'}] | `;
-    if (employeeSearch) filterString += `Employee: "${employeeSearch}" | `;
-    if (deviceSearch) filterString += `Asset/Auth Mode: "${deviceSearch}" | `;
-    if (filterString === `Filters Applied: `) filterString += `None (All records)`;
-
-    doc.text(filterString, 14, 39);
-    doc.text(`Total Audited Entries: ${sessions.length}`, 14, 43);
-
-    // Table Data preparation
-    const tableColumn = [
-      "No.",
-      t('auditor.col_employee_name', 'Nhân viên'),
-      t('auditor.col_employee_code', 'Mã NV'),
-      t('auditor.col_checkin_time', 'Thời gian Vào'),
-      t('auditor.col_checkout_time', 'Thời gian Ra'),
-      t('auditor.col_auth_method', 'Auth Mode'),
-      t('auditor.col_devices_carried', 'Assets Carried'),
-      "Ingress Biometrics",
-      "Egress Biometrics"
-    ];
+  // Export to PDF — dùng html2canvas để render đúng tiếng Việt
+  const exportToPDF = async () => {
+    // 1. Build HTML content với font hỗ trợ Unicode và style rõ ràng
+    const runDate = new Date().toLocaleString();
+    let filterString = 'None (All records)';
+    const parts = [];
+    if (startDate || endDate) parts.push(`Date: [${startDate || 'Any'} → ${endDate || 'Any'}]`);
+    if (startHour || endHour) parts.push(`Hours: [${startHour || '00:00'} → ${endHour || '23:59'}]`);
+    if (employeeSearch) parts.push(`Employee: "${employeeSearch}"`);
+    if (deviceSearch) parts.push(`Asset/Auth: "${deviceSearch}"`);
+    if (parts.length > 0) filterString = parts.join(' | ');
 
     const tableRows = sessions.map((session, idx) => {
       const checkInStr = session.check_in_at ? new Date(session.check_in_at).toLocaleString() : '-';
-      const checkOutStr = session.check_out_at ? new Date(session.check_out_at).toLocaleString() : (session.status === 'in' ? 'In Progress' : '-');
+      const checkOutStr = session.check_out_at
+        ? new Date(session.check_out_at).toLocaleString()
+        : (session.status === 'in' ? 'In Progress' : '-');
       const carriedAssets = session.devices && session.devices.length > 0
         ? session.devices.map(d => `${d.brand} ${d.model_name}`).join(', ')
         : 'None';
+      const ingressText = session.entry_photo ? 'Captured' : 'None';
+      const egressText = session.exit_photo ? 'Captured' : 'None';
+      const rowBg = idx % 2 === 0 ? '#ffffff' : '#f8fafc';
       
-      const ingressPhotoText = session.entry_photo ? 'Captured' : 'None';
-      const egressPhotoText = session.exit_photo ? 'Captured' : 'None';
+      return `
+        <tr style="background:${rowBg}; border-bottom: 1px solid #e2e8f0;">
+          <td style="padding: 10px 12px; text-align: center; font-size: 11px; line-height: 1.5; vertical-align: middle;">${idx + 1}</td>
+          <td style="padding: 10px 12px; font-weight: 600; font-size: 11px; line-height: 1.5; vertical-align: middle; color: #0f172a;">${session.full_name || ''}</td>
+          <td style="padding: 10px 12px; font-size: 11px; line-height: 1.5; vertical-align: middle; font-family: monospace; color: #475569;">${session.employee_code || ''}</td>
+          <td style="padding: 10px 12px; font-size: 11px; line-height: 1.5; vertical-align: middle; color: #334155;">${checkInStr}</td>
+          <td style="padding: 10px 12px; font-size: 11px; line-height: 1.5; vertical-align: middle; color: #334155;">${checkOutStr}</td>
+          <td style="padding: 10px 12px; font-size: 11px; line-height: 1.5; vertical-align: middle; font-weight: 600; color: #0284c7; text-transform: uppercase;">${session.auth_method || ''}</td>
+          <td style="padding: 10px 12px; font-size: 11px; line-height: 1.5; vertical-align: middle; color: #475569; max-width: 180px; word-wrap: break-word; white-space: normal;">${carriedAssets}</td>
+          <td style="padding: 10px 12px; text-align: center; font-size: 11px; line-height: 1.5; vertical-align: middle; color: #334155;">${ingressText}</td>
+          <td style="padding: 10px 12px; text-align: center; font-size: 11px; line-height: 1.5; vertical-align: middle; color: #334155;">${egressText}</td>
+        </tr>`;
+    }).join('');
 
-      return [
-        idx + 1,
-        session.full_name,
-        session.employee_code,
-        checkInStr,
-        checkOutStr,
-        session.auth_method,
-        carriedAssets,
-        ingressPhotoText,
-        egressPhotoText
-      ];
-    });
+    const htmlContent = `
+      <div id="pdf-export-root" style="font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; width: 1120px; background: #f8fafc; padding: 0; box-sizing: border-box;">
+        <!-- Header bar -->
+        <div style="background: #002c77; color: #ffffff; padding: 18px 24px; box-sizing: border-box;">
+          <div style="font-size: 18px; font-weight: 700; letter-spacing: 0.5px; line-height: 1.3;">HCLTech x ANZ Strategic Alliance - Innovation Nexus</div>
+          <div style="font-size: 11px; color: #cbd5e1; margin-top: 4px; font-weight: 500;">HIGH-INTEGRITY E2E PHYSICAL ACCESS AUDIT LEDGER</div>
+          <div style="font-size: 11px; color: #cbd5e1; float: right; margin-top: -15px; font-weight: 500;">Run Date: ${runDate}</div>
+        </div>
+        
+        <!-- Title + meta -->
+        <div style="padding: 20px 24px 10px 24px; box-sizing: border-box;">
+          <div style="font-size: 16px; font-weight: 700; color: #0f172a; margin-bottom: 6px; line-height: 1.3;">${t('auditor.dashboard_title', 'Kiểm soát Lịch sử Ra vào')}</div>
+          <div style="font-size: 11px; color: #64748b; font-weight: 500; line-height: 1.4;">Filters Applied: <span style="color: #334155; font-weight: 600;">${filterString}</span></div>
+          <div style="font-size: 11px; color: #64748b; font-weight: 500; line-height: 1.4; margin-top: 2px;">Total Audited Entries: <span style="color: #334155; font-weight: 600;">${sessions.length}</span></div>
+        </div>
+        
+        <!-- Table -->
+        <div style="padding: 10px 24px 24px 24px; box-sizing: border-box;">
+          <table style="width: 100%; border-collapse: collapse; background: #ffffff; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);">
+            <thead>
+              <tr style="background: #002c77; color: #ffffff;">
+                <th style="padding: 12px; text-align: center; font-size: 11px; font-weight: 700; width: 40px; border-bottom: 2px solid #e2e8f0;">No.</th>
+                <th style="padding: 12px; text-align: left; font-size: 11px; font-weight: 700; width: 160px; border-bottom: 2px solid #e2e8f0;">${t('auditor.col_employee_name', 'Nhân viên')}</th>
+                <th style="padding: 12px; text-align: left; font-size: 11px; font-weight: 700; width: 90px; border-bottom: 2px solid #e2e8f0;">${t('auditor.col_employee_code', 'Mã NV')}</th>
+                <th style="padding: 12px; text-align: left; font-size: 11px; font-weight: 700; width: 160px; border-bottom: 2px solid #e2e8f0;">${t('auditor.col_checkin_time', 'Thời gian Vào')}</th>
+                <th style="padding: 12px; text-align: left; font-size: 11px; font-weight: 700; width: 160px; border-bottom: 2px solid #e2e8f0;">${t('auditor.col_checkout_time', 'Thời gian Ra')}</th>
+                <th style="padding: 12px; text-align: left; font-size: 11px; font-weight: 700; width: 110px; border-bottom: 2px solid #e2e8f0;">${t('auditor.col_auth_method', 'Phương thức')}</th>
+                <th style="padding: 12px; text-align: left; font-size: 11px; font-weight: 700; width: 220px; border-bottom: 2px solid #e2e8f0;">${t('auditor.col_devices_carried', 'Thiết bị mang theo')}</th>
+                <th style="padding: 12px; text-align: center; font-size: 11px; font-weight: 700; width: 110px; border-bottom: 2px solid #e2e8f0;">Ingress Biometrics</th>
+                <th style="padding: 12px; text-align: center; font-size: 11px; font-weight: 700; width: 110px; border-bottom: 2px solid #e2e8f0;">Egress Biometrics</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${tableRows}
+            </tbody>
+          </table>
+        </div>
+      </div>`;
 
-    doc.autoTable({
-      startY: 47,
-      head: [tableColumn],
-      body: tableRows,
-      theme: 'grid',
-      styles: {
-        fontSize: 7.5,
-        font: 'helvetica',
-        cellPadding: 2,
-      },
-      headStyles: {
-        fillColor: [0, 44, 119], // ANZ Navy
-        textColor: [255, 255, 255],
-        fontStyle: 'bold',
-      },
-      alternateRowStyles: {
-        fillColor: [240, 244, 248]
-      },
-      columnStyles: {
-        0: { cellWidth: 10 },
-        1: { cellWidth: 32 },
-        2: { cellWidth: 18 },
-        3: { cellWidth: 35 },
-        4: { cellWidth: 35 },
-        5: { cellWidth: 25 },
-        6: { cellWidth: 60 },
-        7: { cellWidth: 28 },
-        8: { cellWidth: 28 }
+    // 2. Tạo container ẩn nhưng vẫn trong luồng layout chính để render chính xác font và kích thước
+    const container = document.createElement('div');
+    container.style.cssText = 'position: absolute; left: 0; top: 0; width: 1120px; opacity: 0.01; pointer-events: none; z-index: -9999;';
+    container.innerHTML = htmlContent;
+    document.body.appendChild(container);
+
+    try {
+      // 3. Chụp canvas với scale cao hơn để chữ cực kỳ sắc nét
+      const canvas = await html2canvas(container.querySelector('#pdf-export-root'), {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#f8fafc',
+        logging: false,
+      });
+
+      // 4. Tạo PDF từ canvas
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+      const pageW = pdf.internal.pageSize.getWidth();
+      const pageH = pdf.internal.pageSize.getHeight();
+
+      const imgW = pageW;
+      const imgH = (canvas.height * imgW) / canvas.width;
+
+      if (imgH <= pageH) {
+        pdf.addImage(imgData, 'PNG', 0, 0, imgW, imgH);
+      } else {
+        // Chia trang nếu nội dung dài
+        let yOffset = 0;
+        while (yOffset < imgH) {
+          if (yOffset > 0) pdf.addPage();
+          pdf.addImage(imgData, 'PNG', 0, -yOffset, imgW, imgH);
+          yOffset += pageH;
+        }
       }
-    });
 
-    // Save
-    doc.save(`ANZ_Compliance_Report_${new Date().toISOString().slice(0, 10)}.pdf`);
+      pdf.save(`ANZ_Compliance_Report_${new Date().toISOString().slice(0, 10)}.pdf`);
+    } finally {
+      document.body.removeChild(container);
+    }
   };
 
   const getStatusBadge = (session) => {
@@ -274,13 +274,7 @@ const AuditorDashboard = () => {
       {/* Header section with HCL / ANZ Brand Identity */}
       <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-md border-b border-fog pb-lg">
         <div>
-          <div className="flex items-center space-x-sm text-brand-navy mb-xs">
-            <ShieldCheck size={28} className="text-brand-navy" />
-            <span className="text-caption-bold tracking-widest font-extrabold uppercase bg-brand-navy/10 text-brand-navy px-xs py-xxs rounded">
-              ANZ COMPLIANCE
-            </span>
-          </div>
-          <h1 className="text-display-md font-extrabold tracking-tight text-brand-navy">
+          <h1 className="text-display-md font-extrabold tracking-tight text-black">
             {t('auditor.dashboard_title', 'Đối soát Lịch sử Ra vào')}
           </h1>
           <p className="text-body-md text-graphite mt-xs max-w-3xl">
@@ -313,9 +307,9 @@ const AuditorDashboard = () => {
       {/* Advanced Query Builder (Filters) */}
       <form onSubmit={handleApplyFilters} className="bg-white p-xl rounded-2xl border border-fog shadow-soft-lift space-y-lg">
         <div className="flex items-center justify-between">
-          <h3 className="text-caption-bold text-brand-navy uppercase tracking-widest font-extrabold flex items-center space-x-xs">
+          <h3 className="text-caption-bold text-black uppercase tracking-widest font-extrabold flex items-center space-x-xs">
             <span className="w-2 h-2 rounded-full bg-brand-purple"></span>
-            <span>Bộ lọc đối soát nâng cao</span>
+            <span>{t('auditor.advanced_filter_title')}</span>
           </h3>
           <button 
             type="button"
@@ -323,14 +317,14 @@ const AuditorDashboard = () => {
             className="text-caption-md font-bold text-brand-purple hover:text-brand-navy hover:underline transition-colors flex items-center gap-xxs"
           >
             <RefreshCw size={14} />
-            <span>Xóa bộ lọc</span>
+            <span>{t('auditor.clear_filters')}</span>
           </button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-md">
           {/* Start Date */}
           <div className="space-y-xxs">
-            <label className="text-[10px] font-bold text-graphite uppercase tracking-wider block">Từ ngày</label>
+            <label className="text-[10px] font-bold text-graphite uppercase tracking-wider block">{t('auditor.from_date')}</label>
             <div className="relative">
               <Calendar className="absolute left-md top-1/2 -translate-y-1/2 text-steel" size={16} />
               <input 
@@ -344,7 +338,7 @@ const AuditorDashboard = () => {
 
           {/* End Date */}
           <div className="space-y-xxs">
-            <label className="text-[10px] font-bold text-graphite uppercase tracking-wider block">Đến ngày</label>
+            <label className="text-[10px] font-bold text-graphite uppercase tracking-wider block">{t('auditor.to_date')}</label>
             <div className="relative">
               <Calendar className="absolute left-md top-1/2 -translate-y-1/2 text-steel" size={16} />
               <input 
@@ -358,7 +352,7 @@ const AuditorDashboard = () => {
 
           {/* Start Hour */}
           <div className="space-y-xxs">
-            <label className="text-[10px] font-bold text-graphite uppercase tracking-wider block">Giờ vào từ</label>
+            <label className="text-[10px] font-bold text-graphite uppercase tracking-wider block">{t('auditor.ingress_from_hour')}</label>
             <div className="relative">
               <Clock className="absolute left-md top-1/2 -translate-y-1/2 text-steel" size={16} />
               <input 
@@ -372,7 +366,7 @@ const AuditorDashboard = () => {
 
           {/* End Hour */}
           <div className="space-y-xxs">
-            <label className="text-[10px] font-bold text-graphite uppercase tracking-wider block">Giờ vào đến</label>
+            <label className="text-[10px] font-bold text-graphite uppercase tracking-wider block">{t('auditor.ingress_to_hour')}</label>
             <div className="relative">
               <Clock className="absolute left-md top-1/2 -translate-y-1/2 text-steel" size={16} />
               <input 
@@ -386,7 +380,7 @@ const AuditorDashboard = () => {
 
           {/* Employee Search */}
           <div className="space-y-xxs">
-            <label className="text-[10px] font-bold text-graphite uppercase tracking-wider block">Nhân viên (Tên/Mã)</label>
+            <label className="text-[10px] font-bold text-graphite uppercase tracking-wider block">{t('auditor.employee_label')}</label>
             <div className="relative">
               <User className="absolute left-md top-1/2 -translate-y-1/2 text-steel" size={16} />
               <input 
@@ -401,7 +395,7 @@ const AuditorDashboard = () => {
 
           {/* Device / Auth method Search */}
           <div className="space-y-xxs">
-            <label className="text-[10px] font-bold text-graphite uppercase tracking-wider block">Thiết bị mang/Quét</label>
+            <label className="text-[10px] font-bold text-graphite uppercase tracking-wider block">{t('auditor.device_label')}</label>
             <div className="relative">
               <Laptop className="absolute left-md top-1/2 -translate-y-1/2 text-steel" size={16} />
               <input 
@@ -421,7 +415,7 @@ const AuditorDashboard = () => {
             className="flex items-center justify-center space-x-sm px-xxl py-sm bg-brand-blue hover:bg-brand-blue/90 text-white rounded-xl text-caption-bold font-bold transition-all shadow-soft-lift active:scale-95"
           >
             <Search size={16} />
-            <span>ÁP DỤNG TRUY VẤN</span>
+            <span>{t('auditor.apply_query')}</span>
           </button>
         </div>
       </form>
@@ -431,17 +425,17 @@ const AuditorDashboard = () => {
         
         {/* Table Header Summary info */}
         <div className="px-xl py-md bg-slate-50 border-b border-fog flex items-center justify-between">
-          <span className="text-caption-bold text-brand-navy font-extrabold uppercase tracking-wider">
-            SỔ CÁI HOẠT ĐỘNG RA VÀO
+          <span className="text-caption-bold text-black font-extrabold uppercase tracking-wider">
+            {t('auditor.access_ledger')}
           </span>
           <div className="flex items-center space-x-md">
             <span className="text-caption-md text-graphite font-medium">
-              Tìm thấy <strong className="text-brand-navy text-body-emphasis">{sessions.length}</strong> phiên
+              {t('auditor.found_sessions', { count: sessions.length })}
             </span>
             <button 
               onClick={() => fetchSessions(getActiveFilters())}
               className="p-xs text-graphite hover:text-brand-navy hover:bg-slate-200 rounded-lg transition-all active:scale-90"
-              title="Đồng bộ lại"
+              title={t('auditor.sync')}
             >
               <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
             </button>
@@ -473,7 +467,7 @@ const AuditorDashboard = () => {
                   <td colSpan="7" className="px-xl py-xxxl text-center text-steel italic">
                     <div className="flex flex-col items-center justify-center space-y-md">
                       <ShieldCheck size={48} className="text-slate-300" />
-                      <p className="text-body-md text-graphite font-bold">Không tìm thấy dữ liệu đối soát nào khớp</p>
+                      <p className="text-body-md text-graphite font-bold">{t('auditor.no_sessions_found')}</p>
                     </div>
                   </td>
                 </tr>
@@ -558,7 +552,7 @@ const AuditorDashboard = () => {
                               </span>
                             ))
                           ) : (
-                            <span className="text-caption-sm text-graphite italic font-medium">Không mang theo</span>
+                            <span className="text-caption-sm text-graphite italic font-medium">{t('auditor.no_devices')}</span>
                           )}
                         </div>
                       </td>
@@ -584,7 +578,7 @@ const AuditorDashboard = () => {
                                 <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/thumb:opacity-100 bg-brand-navy/40 rounded transition-opacity">
                                   <Eye size={14} className="text-white" />
                                 </div>
-                                <span className="text-[9px] font-bold text-slate-400 block mt-xxs">Vào</span>
+                                <span className="text-[9px] font-bold text-slate-400 block mt-xxs">{t('auditor.in_label')}</span>
                               </div>
                             ) : (
                               <span className="text-[10px] text-slate-400 italic block">No Photo</span>
@@ -609,7 +603,7 @@ const AuditorDashboard = () => {
                                 <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/thumb:opacity-100 bg-brand-navy/40 rounded transition-opacity">
                                   <Eye size={14} className="text-white" />
                                 </div>
-                                <span className="text-[9px] font-bold text-slate-400 block mt-xxs">Ra</span>
+                                <span className="text-[9px] font-bold text-slate-400 block mt-xxs">{t('auditor.out_label')}</span>
                               </div>
                             ) : (
                               <span className="text-[10px] text-slate-400 italic block">No Photo</span>
@@ -665,17 +659,17 @@ const AuditorDashboard = () => {
               <div className="w-full md:w-1/3 space-y-md">
                 <div className="bg-white p-md rounded-xl border border-fog shadow-inner space-y-sm">
                   <div className="space-y-xxs">
-                    <span className="text-[9px] font-bold text-graphite uppercase tracking-wider">Nhân viên</span>
+                    <span className="text-[9px] font-bold text-graphite uppercase tracking-wider">{t('auditor.col_employee_name')}</span>
                     <p className="text-caption-bold font-extrabold text-brand-navy leading-tight">{zoomPhoto.employee}</p>
                   </div>
 
                   <div className="space-y-xxs">
-                    <span className="text-[9px] font-bold text-graphite uppercase tracking-wider">Mã nhân viên</span>
+                    <span className="text-[9px] font-bold text-graphite uppercase tracking-wider">{t('auditor.employee_code_label')}</span>
                     <p className="text-caption-bold font-mono font-bold text-brand-blue">{zoomPhoto.code}</p>
                   </div>
 
                   <div className="space-y-xxs">
-                    <span className="text-[9px] font-bold text-graphite uppercase tracking-wider">Thời điểm ghi nhận</span>
+                    <span className="text-[9px] font-bold text-graphite uppercase tracking-wider">{t('auditor.record_timestamp')}</span>
                     <p className="text-caption-sm font-semibold text-brand-navy">{zoomPhoto.time}</p>
                   </div>
                 </div>
@@ -683,7 +677,7 @@ const AuditorDashboard = () => {
                 <div className="p-md rounded-xl bg-blue-50 border border-blue-100 flex gap-sm text-[11px] text-brand-navy">
                   <AlertCircle size={18} className="text-brand-blue flex-shrink-0 mt-xxs" />
                   <p className="leading-relaxed font-medium">
-                    Hình ảnh này được lưu trực tiếp vào ổ lưu trữ an toàn lúc xác thực và không thể chỉnh sửa hoặc xóa bởi bất kỳ người dùng nào, đảm bảo tính toàn vẹn kiểm toán.
+                    {t('auditor.biometrics_note')}
                   </p>
                 </div>
               </div>

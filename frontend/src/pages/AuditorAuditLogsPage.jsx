@@ -116,13 +116,7 @@ const AuditorAuditLogsPage = () => {
       {/* Page Header */}
       <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-md border-b border-fog pb-lg">
         <div>
-          <div className="flex items-center space-x-sm text-brand-navy mb-xs">
-            <Database size={28} className="text-brand-navy" />
-            <span className="text-caption-bold tracking-widest font-extrabold uppercase bg-brand-navy/10 text-brand-navy px-xs py-xxs rounded">
-              SYSTEM INTEGRITY AUDIT TRAIL
-            </span>
-          </div>
-          <h1 className="text-display-md font-extrabold tracking-tight text-brand-navy">
+          <h1 className="text-display-md font-extrabold tracking-tight text-black">
             {t('auditor.audit_logs_title', 'Nhật ký Thay đổi Hệ thống')}
           </h1>
           <p className="text-body-md text-graphite mt-xs max-w-3xl">
@@ -145,15 +139,15 @@ const AuditorAuditLogsPage = () => {
 
       {/* Query Filter Controls */}
       <div className="bg-white p-xl rounded-2xl border border-fog shadow-soft-lift space-y-lg">
-        <h3 className="text-caption-bold text-brand-navy uppercase tracking-widest font-extrabold flex items-center space-x-xs">
+        <h3 className="text-caption-bold text-black uppercase tracking-widest font-extrabold flex items-center space-x-xs">
           <span className="w-2 h-2 rounded-full bg-brand-purple"></span>
-          <span>Bộ lọc nhật ký</span>
+          <span>{t('auditor.audit_filter', 'Bộ lọc nhật ký')}</span>
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-md">
           {/* Target Table filter */}
           <div className="space-y-xxs">
-            <label className="text-[10px] font-bold text-graphite uppercase tracking-wider block">Bảng bị tác động</label>
+            <label className="text-[10px] font-bold text-graphite uppercase tracking-wider block">{t('auditor.impacted_table')}</label>
             <div className="relative">
               <Layers className="absolute left-md top-1/2 -translate-y-1/2 text-steel" size={16} />
               <select
@@ -161,10 +155,10 @@ const AuditorAuditLogsPage = () => {
                 onChange={(e) => setTargetTableFilter(e.target.value)}
                 className="w-full bg-brand-slate border border-fog rounded-xl py-sm pl-11 pr-md text-caption-bold text-brand-navy focus:outline-none focus:border-brand-navy focus:bg-white transition-all appearance-none cursor-pointer"
               >
-                <option value="all">Tất cả bảng dữ liệu</option>
-                <option value="users">users (Nhân sự & Tài khoản)</option>
-                <option value="devices">devices (Thiết bị/Tài sản)</option>
-                <option value="sessions">sessions (Phiên ra vào)</option>
+                <option value="all">{t('auditor.all_tables')}</option>
+                <option value="users">{t('auditor.table_users_label')}</option>
+                <option value="devices">{t('auditor.table_devices_label')}</option>
+                <option value="sessions">{t('auditor.table_sessions_label')}</option>
               </select>
               <ChevronDown className="absolute right-md top-1/2 -translate-y-1/2 text-steel pointer-events-none" size={16} />
             </div>
@@ -172,12 +166,12 @@ const AuditorAuditLogsPage = () => {
 
           {/* Actor search */}
           <div className="space-y-xxs">
-            <label className="text-[10px] font-bold text-graphite uppercase tracking-wider block">Người thực hiện (Tên/User)</label>
+            <label className="text-[10px] font-bold text-graphite uppercase tracking-wider block">{t('auditor.operator_label')}</label>
             <div className="relative">
               <User className="absolute left-md top-1/2 -translate-y-1/2 text-steel" size={16} />
               <input 
                 type="text" 
-                placeholder="Tìm quản trị viên..."
+                placeholder={t('auditor.search_admin_placeholder')}
                 value={actorSearch}
                 onChange={(e) => setActorSearch(e.target.value)}
                 className="w-full bg-brand-slate border border-fog rounded-xl py-sm pl-11 pr-md text-caption-md text-brand-navy placeholder:text-steel focus:outline-none focus:border-brand-navy focus:bg-white transition-all"
@@ -187,7 +181,7 @@ const AuditorAuditLogsPage = () => {
 
           {/* Start Date */}
           <div className="space-y-xxs">
-            <label className="text-[10px] font-bold text-graphite uppercase tracking-wider block">Từ ngày</label>
+            <label className="text-[10px] font-bold text-graphite uppercase tracking-wider block">{t('auditor.from_date')}</label>
             <div className="relative">
               <Calendar className="absolute left-md top-1/2 -translate-y-1/2 text-steel" size={16} />
               <input 
@@ -201,7 +195,7 @@ const AuditorAuditLogsPage = () => {
 
           {/* End Date */}
           <div className="space-y-xxs">
-            <label className="text-[10px] font-bold text-graphite uppercase tracking-wider block">Đến ngày</label>
+            <label className="text-[10px] font-bold text-graphite uppercase tracking-wider block">{t('auditor.to_date')}</label>
             <div className="relative">
               <Calendar className="absolute left-md top-1/2 -translate-y-1/2 text-steel" size={16} />
               <input 
@@ -216,13 +210,13 @@ const AuditorAuditLogsPage = () => {
 
         <div className="flex justify-between items-center pt-xs border-t border-slate-100">
           <span className="text-caption-md text-graphite font-medium">
-            Có <strong className="text-brand-navy font-bold">{filteredLogs.length}</strong> nhật ký khớp điều kiện lọc
+            {t('auditor.found_logs', { count: filteredLogs.length })}
           </span>
           <button 
             onClick={handleResetFilters}
             className="px-xl py-sm bg-slate-100 hover:bg-slate-200 text-brand-navy rounded-xl text-caption-bold font-bold transition-all active:scale-95"
           >
-            Nhập lại bộ lọc
+            {t('auditor.reset_filters')}
           </button>
         </div>
       </div>
@@ -311,7 +305,7 @@ const AuditorAuditLogsPage = () => {
                         {/* Reason */}
                         <td className="px-xl py-lg max-w-xs">
                           <p className="text-caption-md font-medium text-brand-navy truncate-2-lines" title={log.reason}>
-                            {log.reason || <span className="text-slate-400 italic">Không có lý do</span>}
+                            {log.reason || <span className="text-slate-400 italic">{t('auditor.no_reason')}</span>}
                           </p>
                         </td>
 
@@ -358,9 +352,9 @@ const AuditorAuditLogsPage = () => {
                             <div className="mt-md p-md rounded-xl bg-blue-50/45 border border-blue-100 flex items-start gap-sm text-[11px] text-brand-navy">
                               <AlertCircle size={16} className="text-brand-blue flex-shrink-0 mt-xxs" />
                               <div>
-                                <p className="font-bold uppercase tracking-wider text-[9px] text-brand-blue mb-xxs">Chỉ dẫn đối soát</p>
+                                <p className="font-bold uppercase tracking-wider text-[9px] text-brand-blue mb-xxs">{t('auditor.audit_instruction_title')}</p>
                                 <p className="leading-relaxed">
-                                  Hãy đối chiếu cấu trúc dữ liệu trước và sau sự kiện để xem các trường thay đổi (chẳng hạn như role, status, device approve/reject hoặc notes). Thông tin nhạy cảm như password hashes đã được hệ thống tự động loại bỏ trước khi lưu trữ vào nhật ký này.
+                                  {t('auditor.audit_instruction_desc')}
                                 </p>
                               </div>
                             </div>

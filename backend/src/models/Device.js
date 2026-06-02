@@ -20,7 +20,7 @@ class Device {
     const { owner_id, device_type, brand, model_name, serial_number, image_url, qr_code_url, status, registered_via, approved_by } = deviceData;
     const finalStatus = status || 'approved';
     const approvedAt = (finalStatus === 'approved') ? 'NOW()' : 'NULL';
-    
+
     const result = await pool.query(
       `INSERT INTO devices (owner_id, device_type, brand, model_name, serial_number, image_url, qr_code_url, status, registered_via, approved_by, approved_at) 
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, ${approvedAt}) RETURNING *`,

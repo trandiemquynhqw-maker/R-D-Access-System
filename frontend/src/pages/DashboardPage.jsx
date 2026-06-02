@@ -33,16 +33,27 @@ export const DashboardPage = () => {
   const [rejectingSerials, setRejectingSerials] = useState({});
 
   const handleLiveScan = (data) => {
-    let formattedDevice = data.device;
-    if (data.type === 'check_in') {
-      const countMatch = data.device.match(/\((\d+)/);
-      const count = countMatch ? countMatch[1] : 0;
-      formattedDevice = `${t('kiosk.checkIn')} (${count} ${t('common.devices').toLowerCase()})`;
-    } else if (data.type === 'check_out') {
-      formattedDevice = t('kiosk.facility_exit') || 'Cửa ra cơ sở';
-    }
-
     setLiveScans(prev => {
+      // Check if we already have a recent identical scan (same user, device, and status) within the last 2 seconds
+      const isDuplicate = prev.some(scan => 
+        scan.user === data.user && 
+        scan.device === data.device && 
+        Math.abs(new Date(scan.time || new Date()) - new Date(data.time || new Date())) < 2000
+      );
+      if (isDuplicate) {
+        console.log("[Dashboard Debug] Duplicate socket event filtered out:", data.user, data.device);
+        return prev;
+      }
+
+      let formattedDevice = data.device;
+      if (data.type === 'check_in') {
+        const countMatch = data.device.match(/\((\d+)/);
+        const count = countMatch ? countMatch[1] : 0;
+        formattedDevice = `${t('kiosk.checkIn')} (${count} ${t('common.devices').toLowerCase()})`;
+      } else if (data.type === 'check_out') {
+        formattedDevice = t('kiosk.facility_exit') || 'Cửa ra cơ sở';
+      }
+
       return [{ ...data, device: formattedDevice }, ...prev].slice(0, 5);
     });
     
@@ -180,7 +191,20 @@ export const DashboardPage = () => {
     const ws = XLSX.utils.json_to_sheet(wsData);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Audit_Trail");
-    XLSX.writeFile(wb, `Audit_Trail_${new Date().toISOString().slice(0,10)}.xlsx`);
+    
+    // Manual robust Blob download to ensure correct filename and extension across all browsers
+    const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `Audit_Trail_${new Date().toISOString().slice(0,10)}.xlsx`;
+    document.body.appendChild(link);
+    link.click();
+    setTimeout(() => {
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }, 100);
   };
 
   if (loading && activity.length === 0) return (

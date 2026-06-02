@@ -14,8 +14,30 @@ const generateQRData = (userId, username) => {
 const verifyQRData = (qrData) => {
   try {
     const data = JSON.parse(qrData);
+    if (data) {
+      if (!data.username && (data.employeeCode || data.employee_code)) {
+        data.username = data.employeeCode || data.employee_code;
+      }
+    }
     return data;
   } catch (error) {
+    if (typeof qrData === 'string' && qrData.trim().length > 0) {
+      const trimmed = qrData.trim();
+      if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+        try {
+          const urlObj = new URL(trimmed);
+          const params = urlObj.searchParams;
+          const userId = params.get('userId') || params.get('user_id');
+          const username = params.get('username') || params.get('employeeCode') || params.get('employee_code');
+          if (userId || username) {
+            return { userId, username };
+          }
+        } catch (e) {
+          // Ignore URL parsing error
+        }
+      }
+      return { username: trimmed };
+    }
     return null;
   }
 };

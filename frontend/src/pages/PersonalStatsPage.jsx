@@ -228,7 +228,7 @@ const PersonalStatsPage = () => {
                             <div key={activity.log_id} className="p-md bg-cloud rounded-md border border-fog hover:border-primary transition-colors">
                                 <div className="flex justify-between items-start mb-sm">
                                     <p className="text-caption-bold text-ink">
-                                        {activity.status === 'checked_in' ? t('lab_inbound') : t('lab_outbound')}
+                                        {activity.event_type === 'check_in' ? t('lab_inbound') : t('lab_outbound')}
                                     </p>
                                     <span className="text-[10px] font-mono text-charcoal bg-fog px-xs py-xxs rounded">#{activity.log_id}</span>
                                 </div>

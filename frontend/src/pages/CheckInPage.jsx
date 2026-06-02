@@ -44,6 +44,9 @@ export const CheckInPage = () => {
   const [forgottenSessionMessage, setForgottenSessionMessage] = useState('');
 
   const quickRegDataRef = useRef(quickRegData);
+  const lastScannedRef = useRef({ id: '', time: 0 });
+  const lastEmployeeScanRef = useRef({ text: '', time: 0 });
+  
   useEffect(() => {
     quickRegDataRef.current = quickRegData;
   }, [quickRegData]);
@@ -128,10 +131,20 @@ export const CheckInPage = () => {
   };
 
   const handleDeviceQRSuccess = async (decodedText) => {
+    console.log("[Kiosk QR] Scanned Device QR text:", decodedText);
     try {
       const data = JSON.parse(decodedText);
       if (data && data.deviceId) {
         const scannedId = String(data.deviceId);
+        
+        // Prevent rapid double-scan race condition
+        const now = Date.now();
+        if (lastScannedRef.current.id === scannedId && now - lastScannedRef.current.time < 2000) {
+          console.log("[Kiosk QR] Ignored rapid double-scan for device:", scannedId);
+          return;
+        }
+        lastScannedRef.current = { id: scannedId, time: now };
+
         const matchedDevice = approvedDevices.find(d => String(d.device_id) === scannedId);
         if (matchedDevice) {
           setSelectedDevices((prev) => !prev.includes(matchedDevice.device_id) ? [...prev, matchedDevice.device_id] : prev);
@@ -165,6 +178,7 @@ export const CheckInPage = () => {
         }
       }
     } catch (e) {
+      console.error("[Kiosk QR] Parse device QR error:", e);
       setMessage(t('kiosk.invalid_qr'));
       setMessageType('error');
     }
@@ -226,11 +240,23 @@ export const CheckInPage = () => {
   };
 
   const handleEmployeeQRSuccess = async (decodedText) => {
+    console.log("[Kiosk QR] Scanned Employee Code/JSON:", decodedText);
+    
+    // Prevent rapid double-scan race condition
+    const now = Date.now();
+    if (lastEmployeeScanRef.current.text === decodedText && now - lastEmployeeScanRef.current.time < 2000) {
+      console.log("[Kiosk QR] Ignored rapid double-scan for employee:", decodedText);
+      return;
+    }
+    lastEmployeeScanRef.current = { text: decodedText, time: now };
+
     setLoading(true);
     setMessage('');
     try {
-      await qrLogin(decodedText);
+      const res = await qrLogin(decodedText);
+      console.log("[Kiosk QR] Login success:", res);
     } catch (err) {
+      console.error("[Kiosk QR] Login error:", err);
       setMessage(t('kiosk.invalid_badge'));
       setMessageType('error');
     } finally {
@@ -300,7 +326,7 @@ export const CheckInPage = () => {
                   <div className="absolute top-0 left-0 w-full h-[2px] bg-primary shadow-[0_0_10px_rgba(2,74,216,0.5)] animate-scan-line z-20"></div>
                   <div className="flex items-center justify-center bg-paper rounded-xl relative border border-fog p-6 shadow-sm overflow-hidden">
                     <QRScanner onScanSuccess={handleEmployeeQRSuccess} actionText={t('kiosk.badge_qr_position')} />
-                    
+
                     {loading && (
                       <div className="absolute inset-0 bg-paper/90 backdrop-blur-sm z-50 flex flex-col items-center justify-center space-y-md">
                         <div className="w-12 h-12 border-4 border-fog border-t-primary rounded-full animate-spin"></div>

@@ -157,7 +157,7 @@ const RegisterDevicePage = () => {
                                 </div>
                             )}
 
-                            <div className="mt-xl w-full">
+                            <div className="mt-xl w-full flex flex-col gap-2">
                                 {photo ? (
                                     <button
                                         type="button"

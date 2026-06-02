@@ -71,11 +71,12 @@ const CameraCapture = ({ onCapture, autoCapture = false }) => {
       {!capturedImage ? (
         <div className="relative w-full aspect-square bg-black flex items-center justify-center">
           {error ? (
-            <div className="text-center p-6">
-              <p className="text-rose-400 font-bold mb-4">{error}</p>
+            <div className="text-center p-6 space-y-4">
+              <p className="text-rose-400 font-bold mb-2">{error}</p>
               <button
+                type="button"
                 onClick={startCamera}
-                className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-2xl text-white transition"
+                className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-2xl text-white text-xs font-bold transition mx-auto block"
               >
                 Thử lại
               </button>

@@ -5,7 +5,7 @@ import { deviceService } from '../services/deviceService';
 import Alert from '../components/Alert';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { useLanguageStore } from '../store/languageStore';
-import { Laptop, Smartphone, MonitorSmartphone, Plus, X, QrCode, Shield, Clock, XCircle, CheckCircle2, Trash2, ChevronRight, HardDrive } from 'lucide-react';
+import { Laptop, Smartphone, MonitorSmartphone, Plus, X, QrCode, Shield, Clock, XCircle, CheckCircle2, Trash2, ChevronRight, HardDrive, Download } from 'lucide-react';
 
 export const DeviceRegistrationPage = () => {
   const { t } = useLanguageStore();
@@ -45,6 +45,14 @@ export const DeviceRegistrationPage = () => {
     } catch (error) {
       console.error("Failed to load device QR", error);
     }
+  };
+  
+  const handleDownloadActiveQR = () => {
+    if (!activeQRUrl) return;
+    const link = document.createElement('a');
+    link.download = `QR_${activeDeviceName.replace(/\s+/g, '_')}.png`;
+    link.href = activeQRUrl;
+    link.click();
   };
 
   const handleDeleteDevice = async (id, brand, model_name) => {
@@ -407,13 +415,23 @@ export const DeviceRegistrationPage = () => {
                 <p className="text-caption-md text-charcoal leading-relaxed mb-xl">
                    {t('kiosk_instruction')}
                 </p>
-                
-                <button 
-                  onClick={() => setShowQR(false)}
-                  className="w-full py-sm bg-cloud border border-fog rounded-md font-bold text-ink hover:bg-fog transition"
-                >
-                   {t('close')}
-                </button>
+                 
+                 {activeQRUrl && (
+                   <button 
+                     type="button"
+                     onClick={handleDownloadActiveQR}
+                     className="w-full py-sm bg-primary text-on-ink rounded-md font-bold hover:bg-primary-deep transition mb-md flex items-center justify-center gap-xs shadow-soft-lift text-caption-bold"
+                   >
+                      <Download size={16} /> Tải mã QR (.png)
+                   </button>
+                 )}
+                 
+                 <button 
+                   onClick={() => setShowQR(false)}
+                   className="w-full py-sm bg-cloud border border-fog rounded-md font-bold text-ink hover:bg-fog transition text-caption-bold"
+                 >
+                    {t('close')}
+                 </button>
              </div>
           </div>
         )}

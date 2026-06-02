@@ -51,11 +51,15 @@ const CameraCapture = ({ onCapture, autoCapture = false }) => {
       const canvas = canvasRef.current;
       const context = canvas.getContext('2d');
 
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      // Scale down image to avoid database bloating while preserving enough detail for face recognition/audit
+      const targetWidth = 320;
+      const targetHeight = 240;
+      canvas.width = targetWidth;
+      canvas.height = targetHeight;
+      
+      context.drawImage(video, 0, 0, targetWidth, targetHeight);
 
-      const imageData = canvas.toDataURL('image/jpeg', 0.8);
+      const imageData = canvas.toDataURL('image/jpeg', 0.6); // Quality 0.6 is extremely lightweight yet very clear for face audits!
       setCapturedImage(imageData);
       onCapture(imageData);
     }
@@ -71,11 +75,12 @@ const CameraCapture = ({ onCapture, autoCapture = false }) => {
       {!capturedImage ? (
         <div className="relative w-full aspect-square bg-black flex items-center justify-center">
           {error ? (
-            <div className="text-center p-6">
-              <p className="text-rose-400 font-bold mb-4">{error}</p>
+            <div className="text-center p-6 space-y-4">
+              <p className="text-rose-400 font-bold mb-2">{error}</p>
               <button
+                type="button"
                 onClick={startCamera}
-                className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-2xl text-white transition"
+                className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-2xl text-white text-xs font-bold transition mx-auto block"
               >
                 Thử lại
               </button>

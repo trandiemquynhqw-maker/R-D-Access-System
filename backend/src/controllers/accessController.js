@@ -242,7 +242,17 @@ exports.getAccessHistory = async (req, res) => {
       query_user_id = user_id || req.user.id;
     }
 
-    const history = await AccessLog.findAll({ user_id: query_user_id });
+    const sessions = await Session.findAll({ user_id: query_user_id });
+    
+    // Map sessions to match the frontend expectations of personal stats chronology
+    const history = sessions.map(s => ({
+      id: s.session_id,
+      status: s.status === 'in' ? 'checked_in' : 'checked_out',
+      check_in_time: s.check_in_at,
+      check_out_time: s.check_out_at,
+      notes: s.notes,
+      devices: s.devices
+    }));
 
     res.json({
       history: history.slice(0, limit || 100),
@@ -266,7 +276,7 @@ exports.getPersonalStats = async (req, res) => {
     const durationsResult = await pool.query(
       `SELECT 
         EXTRACT(EPOCH FROM (check_out_at - check_in_at))/3600 as duration_hours,
-        check_in_at
+        check_in_at as check_in_time
        FROM sessions 
        WHERE user_id = $1 AND status != 'in'
        ORDER BY check_in_at DESC`,
@@ -275,7 +285,10 @@ exports.getPersonalStats = async (req, res) => {
 
     const recentActivity = await AccessLog.findAll({ user_id: userId });
 
-    const durations = durationsResult.rows.map(r => r.duration_hours);
+    const durations = durationsResult.rows
+      .map(r => parseFloat(r.duration_hours))
+      .filter(h => !isNaN(h) && h !== null);
+      
     const avgDuration = durations.length > 0 ? (durations.reduce((a, b) => a + b, 0) / durations.length).toFixed(2) : 0;
 
     res.json({

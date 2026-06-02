@@ -74,7 +74,20 @@ const ActivityLogsPage = () => {
         const ws = XLSX.utils.json_to_sheet(wsData);
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Audit_Trail");
-        XLSX.writeFile(wb, `HCL_Activity_Audit_${new Date().toISOString().slice(0, 10)}.xlsx`);
+        
+        // Manual robust Blob download to ensure correct filename and extension across all browsers
+        const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+        const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `HCL_Activity_Audit_${new Date().toISOString().slice(0, 10)}.xlsx`;
+        document.body.appendChild(link);
+        link.click();
+        setTimeout(() => {
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }, 100);
     };
 
     const getActionStyle = (type, desc) => {

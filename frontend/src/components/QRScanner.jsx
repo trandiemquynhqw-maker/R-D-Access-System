@@ -49,8 +49,37 @@ const QRScanner = ({ onScanSuccess, actionText = "Đang quét mã QR..." }) => {
             () => {}
           );
        } catch (err) {
-          console.error("Camera start error:", err);
-          setError("Không thể truy cập Camera. Vui lòng kiểm tra quyền thiết bị.");
+          console.warn("User facing camera failed, trying fallback to any available camera...", err);
+          try {
+             const devices = await Html5Qrcode.getCameras();
+             if (devices && devices.length > 0) {
+                await html5QrCode.start(
+                  devices[0].id,
+                  config,
+                  async (decodedText) => {
+                    if (scanningLock.locked && scanningLock.lastText === decodedText) return;
+                    
+                    scanningLock.locked = true; 
+                    scanningLock.lastText = decodedText;
+                    
+                    setTimeout(() => {
+                      scanningLock.locked = false;
+                      scanningLock.lastText = '';
+                    }, 3000);
+                    
+                    if (scanSuccessRef.current) {
+                      scanSuccessRef.current(decodedText);
+                    }
+                  },
+                  () => {}
+                );
+             } else {
+                throw new Error("No camera devices found");
+             }
+          } catch (fallbackErr) {
+             console.error("Camera fallback start error:", fallbackErr);
+             setError("Không thể truy cập Camera. Vui lòng kiểm tra quyền thiết bị.");
+          }
        }
     };
 

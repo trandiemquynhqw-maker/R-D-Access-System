@@ -175,8 +175,14 @@ exports.qrLogin = async (req, res) => {
     let user;
     if (data.userId) {
       user = await User.findById(data.userId);
-    } else {
+    }
+    
+    // Fallback if userId search didn't find the user (e.g. stale UUID from previous seeds)
+    if (!user && data.username) {
       user = await User.findByUsername(data.username);
+      if (!user) {
+        user = await User.findByEmployeeCode(data.username);
+      }
     }
 
     if (!user) {

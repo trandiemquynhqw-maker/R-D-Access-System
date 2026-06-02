@@ -51,11 +51,15 @@ const CameraCapture = ({ onCapture, autoCapture = false }) => {
       const canvas = canvasRef.current;
       const context = canvas.getContext('2d');
 
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      // Scale down image to avoid database bloating while preserving enough detail for face recognition/audit
+      const targetWidth = 320;
+      const targetHeight = 240;
+      canvas.width = targetWidth;
+      canvas.height = targetHeight;
+      
+      context.drawImage(video, 0, 0, targetWidth, targetHeight);
 
-      const imageData = canvas.toDataURL('image/jpeg', 0.8);
+      const imageData = canvas.toDataURL('image/jpeg', 0.6); // Quality 0.6 is extremely lightweight yet very clear for face audits!
       setCapturedImage(imageData);
       onCapture(imageData);
     }

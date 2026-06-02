@@ -128,7 +128,7 @@ const SessionManagementPage = () => {
       {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-md">
         <div>
-          <h1 className="text-h2 font-bold text-on-surface tracking-tight">{t('sessions.title')}</h1>
+          <h1 className="text-display-md tracking-tight mb-xs text-on-surface">{t('sessions.title')}</h1>
           <p className="text-body-md text-graphite mt-xs">{t('sessions.subtitle')}</p>
         </div>
         <button 

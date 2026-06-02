@@ -67,7 +67,12 @@ export const CheckInPage = () => {
       socket.on('quick_register_reject_update', (payload) => {
         if (payload.serial_number === quickRegDataRef.current.serial_number) {
           setQuickRegStatus('rejected');
-          setMessage(t('kiosk.registration_declined'));
+          let baseMsg = t('kiosk.registration_declined');
+          if (baseMsg.endsWith('.')) {
+            baseMsg = baseMsg.slice(0, -1);
+          }
+          const reasonText = payload.reason ? `: ${payload.reason}` : '';
+          setMessage(`${baseMsg}${reasonText}`);
           setMessageType('error');
         }
       });
@@ -188,7 +193,7 @@ export const CheckInPage = () => {
       setTimeout(() => {
         setActionSuccess(null);
         handleEndSession();
-      }, 4000);
+      }, 15000);
     } catch (err) {
       if (err.response?.status === 409 && err.response?.data?.requires_force_close) {
         setForgottenSessionMessage(err.response.data.message);
@@ -211,7 +216,7 @@ export const CheckInPage = () => {
       setTimeout(() => {
         setActionSuccess(null);
         handleEndSession();
-      }, 4000);
+      }, 15000);
     } catch (err) {
       setMessage(err.response?.data?.message || 'Check-out failed.');
       setMessageType('error');
@@ -293,16 +298,16 @@ export const CheckInPage = () => {
               ) : (
                 <div className="relative">
                   <div className="absolute top-0 left-0 w-full h-[2px] bg-primary shadow-[0_0_10px_rgba(2,74,216,0.5)] animate-scan-line z-20"></div>
-                  {loading ? (
-                    <div className="h-64 flex flex-col items-center justify-center space-y-md">
-                      <div className="w-12 h-12 border-4 border-fog border-t-primary rounded-full animate-spin"></div>
-                      <p className="text-caption-bold text-primary animate-pulse">{t('authenticating')}</p>
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-center bg-paper rounded-xl relative border border-fog p-6 shadow-sm">
-                      <QRScanner onScanSuccess={handleEmployeeQRSuccess} actionText={t('kiosk.badge_qr_position')} />
-                    </div>
-                  )}
+                  <div className="flex items-center justify-center bg-paper rounded-xl relative border border-fog p-6 shadow-sm overflow-hidden">
+                    <QRScanner onScanSuccess={handleEmployeeQRSuccess} actionText={t('kiosk.badge_qr_position')} />
+                    
+                    {loading && (
+                      <div className="absolute inset-0 bg-paper/90 backdrop-blur-sm z-50 flex flex-col items-center justify-center space-y-md">
+                        <div className="w-12 h-12 border-4 border-fog border-t-primary rounded-full animate-spin"></div>
+                        <p className="text-caption-bold text-primary animate-pulse">{t('authenticating')}</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>

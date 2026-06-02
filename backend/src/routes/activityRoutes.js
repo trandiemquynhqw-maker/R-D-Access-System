@@ -12,4 +12,7 @@ router.get('/', requireRole('manager', 'security', 'admin'), activityController.
 // Users can see their own activity
 router.get('/me', activityController.getMyActivity);
 
+// Database Audit Logs for Auditor and Admin
+router.get('/audit-logs', requireRole('admin', 'auditor'), activityController.getAuditLogs);
+
 module.exports = router;

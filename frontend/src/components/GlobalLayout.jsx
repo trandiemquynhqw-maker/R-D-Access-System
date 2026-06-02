@@ -7,6 +7,7 @@ import { accessService } from '../services/accessService';
 import { Users, LogOut, Settings, User, Sun, Moon, Shield, Laptop, Handshake, Globe, ShoppingCart, LogIn, ShieldCheck } from 'lucide-react';
 import { useLanguageStore } from '../store/languageStore';
 import NotificationDropdown from './NotificationDropdown';
+import LanguageSwitcher from './LanguageSwitcher';
 
 const GlobalLayout = ({ children }) => {
   const { language, setLanguage, t } = useLanguageStore();
@@ -55,65 +56,39 @@ const GlobalLayout = ({ children }) => {
 
   return (
     <div className="flex flex-col h-screen bg-canvas dark:bg-ink overflow-hidden font-sans text-ink dark:text-on-ink transition-colors duration-300">
-      {/* 1. Utility Strip - Dark Navy Slab */}
-      <div className="bg-ink text-on-ink h-9 flex items-center justify-between px-xl z-50 text-caption-md font-medium">
-        <div className="flex items-center space-x-xl">
-          <div className="flex items-center">
-            <Globe size={14} className="mr-xs" />
-            <div className="flex items-center space-x-xs bg-charcoal/50 rounded px-xxs">
-               <button 
-                 onClick={() => setLanguage('en')}
-                 className={`px-xs py-0.5 rounded transition-all ${language === 'en' ? 'bg-primary text-white font-bold' : 'text-steel hover:text-white'}`}
-               >
-                 EN
-               </button>
-               <button 
-                 onClick={() => setLanguage('vi')}
-                 className={`px-xs py-0.5 rounded transition-all ${language === 'vi' ? 'bg-primary text-white font-bold' : 'text-steel hover:text-white'}`}
-               >
-                 VI
-               </button>
-            </div>
-          </div>
-          <div className="flex items-center space-x-md border-l border-steel/30 pl-md h-4">
-            <span className="cursor-pointer hover:text-primary">R&D Lab Access</span>
-            <span className="text-steel">|</span>
-            <span className="cursor-pointer font-bold text-primary">Secure Access</span>
-          </div>
-        </div>
-        <div className="flex items-center space-x-xl">
-          <button onClick={() => navigate('/support')} className="hover:text-primary">{t('common.support')}</button>
-          <button className="flex items-center hover:text-primary">
-            <ShoppingCart size={14} className="mr-xs" />
-            <span>{t('common.inventory')}</span>
-          </button>
-          <button onClick={logout} className="flex items-center hover:text-primary">
-            <LogIn size={14} className="mr-xs" />
-            <span>{t('common.sign_out')}</span>
-          </button>
-        </div>
-      </div>
 
       {/* 2. Top Header - White Commercial Body */}
-      <header className="bg-canvas dark:bg-ink-soft border-b border-fog dark:border-charcoal h-16 flex items-center justify-between px-xl z-40 relative">
+      <header className="bg-canvas/80 backdrop-blur-md dark:bg-ink-soft/80 border-b border-fog dark:border-charcoal h-16 flex items-center justify-between px-xl z-40 relative shadow-soft-lift">
         {/* Left: Brand Identity */}
         <div className="flex items-center space-x-xxl">
-          <div className="flex items-center cursor-pointer" onClick={() => navigate('/')}>
-             {/* Collaborative Logo Identity */}
-             <div className="flex items-center space-x-sm">
-                <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center text-primary flex-shrink-0">
-                  <ShieldCheck size={16} />
+          <div className="flex flex-col justify-center cursor-pointer mt-1" onClick={() => navigate('/')}>
+            <div className="flex items-center gap-3">
+              {/* HCLTech Badge */}
+              <div className="flex items-center bg-gradient-to-r from-[#5a1a8b] to-[#1b4cc4] text-white px-3 py-1.5 rounded-md shadow-sm h-8">
+                <span className="font-bold text-lg tracking-tight leading-none">HCLTech</span>
+                <div className="w-[1px] h-5 bg-white/30 mx-2"></div>
+                <div className="flex flex-col justify-center leading-none">
+                  <span className="text-[8px] font-semibold">Supercharging</span>
+                  <span className="text-[8px] font-semibold">Progress™</span>
                 </div>
-                <div className="flex flex-col -space-y-1">
-                    <span className="font-bold text-xl tracking-tighter">R&D Secure Node</span>
-                    <span className="text-[10px] text-graphite uppercase tracking-widest font-bold">Access Management</span>
-                </div>
-             </div>
+              </div>
+              
+              {/* Handshake */}
+              <Handshake size={20} className="text-[#7127FF]" strokeWidth={2} />
+              
+              {/* ANZ Badge */}
+              <div className="flex items-center bg-[#004165] text-white px-4 py-1.5 rounded-md shadow-sm h-8">
+                <span className="font-bold text-xl italic tracking-wider mr-3 leading-none">ANZ</span>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="#00C0E8">
+                  <circle cx="12" cy="7" r="4.5" />
+                  <path d="M12 13.5c-3.5 0-6.5 2-8 5 .5 1.5 2 3 4 3s3.5-1.5 4-4c.5 2.5 2 4 4 4s3.5-1.5 4-3c-1.5-3-4.5-5-8-5z" />
+                </svg>
+              </div>
+            </div>
           </div>
 
           <nav className="hidden lg:flex items-center space-x-lg">
              <button onClick={() => navigate('/dashboard')} className="px-md py-xs font-bold text-ink dark:text-on-ink hover:text-primary transition-colors border-b-2 border-transparent hover:border-primary">{t('common.dashboard')}</button>
-             <button onClick={() => navigate('/devices')} className="px-md py-xs font-bold text-ink dark:text-on-ink hover:text-primary transition-colors border-b-2 border-transparent hover:border-primary">{t('common.devices')}</button>
              <button onClick={() => navigate('/rules')} className="px-md py-xs font-bold text-ink dark:text-on-ink hover:text-primary transition-colors border-b-2 border-transparent hover:border-primary">{t('common.rules')}</button>
           </nav>
         </div>
@@ -130,6 +105,8 @@ const GlobalLayout = ({ children }) => {
           </div>
 
           <NotificationDropdown socket={socket} />
+
+          <LanguageSwitcher theme={isDarkMode ? 'dark' : 'light'} />
 
           <button
             onClick={() => setIsDarkMode(!isDarkMode)}
@@ -178,10 +155,10 @@ const GlobalLayout = ({ children }) => {
       <div className="flex flex-1 overflow-hidden relative">
         <Sidebar isExpanded={isSidebarExpanded} toggleSidebar={toggleSidebar} />
 
-        <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative bg-canvas dark:bg-ink">
+        <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative bg-cloud dark:bg-ink">
           {/* Alternating Bands logic could be applied inside children, 
               but we set a base fog/cloud area for the main view */}
-          <main className="flex-1 overflow-y-auto bg-canvas dark:bg-ink relative">
+          <main className="flex-1 overflow-y-auto bg-cloud dark:bg-ink relative">
             {/* Rhythm: Section padding vertical 80px (spacing.section) */}
             <div className="max-w-[1366px] mx-auto py-section px-xl animate-in fade-in slide-in-from-bottom-2 duration-500">
                {children}

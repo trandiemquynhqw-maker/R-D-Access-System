@@ -59,6 +59,12 @@ const Sidebar = ({ isExpanded, toggleSidebar }) => {
           { path: '/audit', icon: History, label: t('sidebar.security_logs') },
         );
         break;
+      case 'auditor':
+        roleItems.push(
+          { path: '/auditor-dashboard', icon: LayoutDashboard, label: t('sidebar.access_history', 'Lịch sử ra vào') },
+          { path: '/auditor-audit-logs', icon: History, label: t('sidebar.system_audit', 'Nhật ký hệ thống') },
+        );
+        break;
       default:
         break;
     }

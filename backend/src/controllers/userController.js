@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const AuditLog = require('../models/AuditLog');
 const { logActivity } = require('../utils/helpers');
 
 exports.getAllUsers = async (req, res) => {
@@ -28,10 +29,25 @@ exports.updateUserStatus = async (req, res) => {
     const { id } = req.params;
     const { status, role } = req.body;
 
-    const user = await User.update(id, { status, role });
-    if (!user) {
+    const oldUser = await User.findById(id);
+    if (!oldUser) {
       return res.status(404).json({ message: 'User not found' });
     }
+
+    const user = await User.update(id, { status, role });
+
+    // Log in AuditLog
+    const { password_hash: _ph1, ...sanitizedOldUser } = oldUser;
+    const { password_hash: _ph2, ...sanitizedNewUser } = user;
+    await AuditLog.create({
+      actor_id: req.user.id,
+      action: 'UPDATE',
+      target_table: 'users',
+      target_id: id,
+      old_value: sanitizedOldUser,
+      new_value: sanitizedNewUser,
+      reason: `Cập nhật người dùng ${user.username}: status=${status}, role=${role}`
+    });
 
     // Log the change
     await logActivity(req.user.id, 'user_update', `Cập nhật người dùng ${user.username}: status=${status}, role=${role}`, { target_user_id: id, status, role });
@@ -45,13 +61,27 @@ exports.updateUserStatus = async (req, res) => {
 exports.deleteUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const user = await User.delete(id);
-    if (!user) {
+    const oldUser = await User.findById(id);
+    if (!oldUser) {
       return res.status(404).json({ message: 'User not found' });
     }
 
+    await User.delete(id);
+
+    // Log in AuditLog
+    const { password_hash: _ph, ...sanitizedOldUser } = oldUser;
+    await AuditLog.create({
+      actor_id: req.user.id,
+      action: 'DELETE',
+      target_table: 'users',
+      target_id: id,
+      old_value: sanitizedOldUser,
+      new_value: null,
+      reason: `Xóa người dùng: ${oldUser.username}`
+    });
+
     // Log the deletion
-    await logActivity(req.user.id, 'user_deletion', `Xóa người dùng: ${user.username}`, { target_user_id: id });
+    await logActivity(req.user.id, 'user_deletion', `Xóa người dùng: ${oldUser.username}`, { target_user_id: id });
 
     res.json({ message: 'User deleted successfully' });
   } catch (error) {

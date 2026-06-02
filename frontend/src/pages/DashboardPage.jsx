@@ -30,6 +30,7 @@ export const DashboardPage = () => {
   const [totalUsers, setTotalUsers] = useState(0);
   const [totalDevices, setTotalDevices] = useState(0);
   const [quickRequests, setQuickRequests] = useState([]);
+  const [rejectingSerials, setRejectingSerials] = useState({});
 
   const handleLiveScan = (data) => {
     let formattedDevice = data.device;
@@ -69,9 +70,10 @@ export const DashboardPage = () => {
     }
   };
 
-  const handleRejectQuickReg = async (reqData) => {
+  const handleRejectQuickReg = async (reqData, reason) => {
     socket?.emit('quick_register_reject', {
-      serial_number: reqData.serial_number
+      serial_number: reqData.serial_number,
+      reason: reason || 'Không có lý do cụ thể'
     });
     setQuickRequests(prev => prev.filter(r => r.serial_number !== reqData.serial_number));
   };
@@ -181,7 +183,20 @@ export const DashboardPage = () => {
     XLSX.writeFile(wb, `Audit_Trail_${new Date().toISOString().slice(0,10)}.xlsx`);
   };
 
-  if (loading && activity.length === 0) return <LoadingSpinner message={t('loading')} />;
+  if (loading && activity.length === 0) return (
+    <div className="bg-canvas text-ink font-sans transition-colors duration-300 min-h-screen">
+      <div className="max-w-[1366px] mx-auto py-xl px-4 animate-pulse">
+        <div className="h-12 w-64 bg-fog rounded-md mb-xs"></div>
+        <div className="h-6 w-96 bg-fog rounded-md mb-xxl"></div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-xl mb-xxl">
+          <div className="h-40 bg-fog/80 rounded-xl"></div>
+          <div className="h-40 bg-fog/50 rounded-xl"></div>
+          <div className="h-40 bg-fog/50 rounded-xl"></div>
+        </div>
+        <div className="h-[200px] bg-fog/50 rounded-xl mb-xxl"></div>
+      </div>
+    </div>
+  );
   if (user && user.role !== 'security' && user.role !== 'manager' && user.role !== 'admin') return <Navigate to="/devices" />;
 
   return (
@@ -190,10 +205,10 @@ export const DashboardPage = () => {
         {/* Header Section */}
         <div className="mb-xxl flex flex-col md:flex-row justify-between items-start md:items-end gap-md">
           <div>
-            <h1 className="text-display-lg tracking-tight flex items-center">
+            <h1 className="text-display-lg tracking-tight flex items-center font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-primary to-blue-500">
               <ShieldAlert className="text-primary mr-sm" size={40} /> {t('live_security')}
             </h1>
-            <p className="text-body-md text-charcoal mt-xxs">{t('realtime_surveillance')}</p>
+            <p className="text-body-md text-graphite mt-xxs font-medium">{t('realtime_surveillance')}</p>
           </div>
           <button
             onClick={exportToExcel}
@@ -211,31 +226,31 @@ export const DashboardPage = () => {
 
         {/* Stats Grid - Section Band (Cloud) */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-xl mb-xxl">
-          <div className="bg-primary text-on-ink rounded-xl p-xxl shadow-soft-lift relative overflow-hidden group">
+          <div className="bg-primary text-on-ink rounded-xl p-xxl shadow-lg shadow-primary/20 relative overflow-hidden group hover:-translate-y-1 hover:shadow-floating transition-all duration-300 cursor-pointer">
             <div className="relative z-10">
-              <p className="text-primary-soft text-caption-bold uppercase tracking-widest mb-xs">{t('current_occupancy')}</p>
-              <p className="text-display-xxl font-medium">{occupancy.length} <span className="text-display-sm font-normal text-primary-soft">{t('staff')}</span></p>
+              <p className="text-primary-soft text-[10px] uppercase tracking-widest font-bold mb-sm opacity-90">{t('current_occupancy')}</p>
+              <p className="text-6xl font-light">{occupancy.length} <span className="text-2xl font-normal text-primary-soft ml-1">{t('staff')}</span></p>
             </div>
-            <Users size={140} className="absolute -bottom-8 -right-8 text-white opacity-10 group-hover:scale-110 transition-transform" />
+            <Users size={140} className="absolute -bottom-8 -right-8 text-white opacity-10 group-hover:scale-110 group-hover:-rotate-3 transition-transform duration-500" />
           </div>
 
-          <div className="bg-paper border border-fog rounded-xl p-xxl shadow-soft-lift flex items-center justify-between">
+          <div className="bg-paper border-none rounded-xl p-xxl shadow-lg shadow-primary/5 flex items-center justify-between group hover:-translate-y-1 hover:shadow-floating transition-all duration-300 cursor-pointer ring-1 ring-fog/50">
              <div>
-               <p className="text-graphite text-caption-bold uppercase tracking-widest mb-xs">{t('registered_personnel')}</p>
-               <p className="text-display-xl font-medium">{totalUsers} <span className="text-display-sm font-normal text-steel">{t('users')}</span></p>
+               <p className="text-slate-500 text-[10px] uppercase tracking-widest font-bold mb-sm">{t('registered_personnel')}</p>
+               <p className="text-5xl font-light text-ink">{totalUsers} <span className="text-xl font-normal text-steel ml-1">{t('users')}</span></p>
              </div>
-             <div className="w-16 h-16 bg-cloud rounded-full flex items-center justify-center text-primary">
-               <Users size={32} />
+             <div className="w-16 h-16 bg-gradient-to-br from-cloud to-fog rounded-full flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-colors duration-300 shadow-inner">
+               <Users size={28} strokeWidth={1.5} />
              </div>
           </div>
 
-          <div className="bg-paper border border-fog rounded-xl p-xxl shadow-soft-lift flex items-center justify-between">
+          <div className="bg-paper border-none rounded-xl p-xxl shadow-lg shadow-primary/5 flex items-center justify-between group hover:-translate-y-1 hover:shadow-floating transition-all duration-300 cursor-pointer ring-1 ring-fog/50">
              <div>
-               <p className="text-graphite text-caption-bold uppercase tracking-widest mb-xs">{t('monitored_devices')}</p>
-               <p className="text-display-xl font-medium">{totalDevices} <span className="text-display-sm font-normal text-steel">{t('units')}</span></p>
+               <p className="text-slate-500 text-[10px] uppercase tracking-widest font-bold mb-sm">{t('monitored_devices')}</p>
+               <p className="text-5xl font-light text-ink">{totalDevices} <span className="text-xl font-normal text-steel ml-1">{t('units')}</span></p>
              </div>
-             <div className="w-16 h-16 bg-cloud rounded-full flex items-center justify-center text-primary">
-               <Laptop size={32} />
+             <div className="w-16 h-16 bg-gradient-to-br from-cloud to-fog rounded-full flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-colors duration-300 shadow-inner">
+               <Laptop size={28} strokeWidth={1.5} />
              </div>
           </div>
         </div>
@@ -250,14 +265,14 @@ export const DashboardPage = () => {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-md">
              {liveScans.length > 0 ? liveScans.map((scan, idx) => (
-               <div 
+                 <div 
                  key={idx} 
-                 className={`bg-paper border rounded-xl p-md shadow-soft-lift transition-all animate-in slide-in-from-top-2 duration-500 ${
+                 className={`bg-paper rounded-xl p-md shadow-lg shadow-primary/5 hover:-translate-y-1 hover:shadow-floating transition-all duration-300 group cursor-pointer ${
                    scan.status === 'mismatch' 
-                     ? 'border-bloom-coral ring-2 ring-bloom-coral/10 bg-bloom-rose/5' 
+                     ? 'border border-bloom-coral/30 ring-1 ring-bloom-coral/10 bg-bloom-rose/5' 
                      : scan.status === 'checkout'
-                       ? 'border-orange-500 ring-2 ring-orange-500/10 bg-orange-50/30'
-                       : 'border-fog'
+                       ? 'border border-orange-500/30 ring-1 ring-orange-500/10 bg-orange-50/30'
+                       : 'border-transparent ring-1 ring-fog/50'
                  }`}
                >
                   <div className="flex justify-between items-center mb-sm">
@@ -349,7 +364,7 @@ export const DashboardPage = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-xxl mb-section">
           {/* Live Activity Feed */}
-          <div className="bg-paper border border-fog rounded-xl shadow-soft-lift overflow-hidden flex flex-col h-[600px]">
+          <div className="bg-paper border-none rounded-xl shadow-lg shadow-primary/5 overflow-hidden flex flex-col h-[600px] ring-1 ring-fog/50">
             <div className="p-xl border-b border-fog bg-cloud flex justify-between items-center">
               <h2 className="text-display-xs flex items-center">
                  <Activity className="text-primary mr-sm" size={20} /> {t('live_activity')}
@@ -362,7 +377,7 @@ export const DashboardPage = () => {
                   {activity.map((log) => {
                     const isCheckIn = log.event_type === 'check_in';
                     return (
-                      <div key={log.log_id} className="p-xl hover:bg-cloud transition-colors flex items-center justify-between group">
+                      <div key={log.log_id} className="p-xl hover:bg-cloud transition-all duration-300 flex items-center justify-between group hover:translate-x-1 hover:shadow-sm cursor-pointer">
                         <div className="flex items-center min-w-0">
                           <div className={`w-10 h-10 rounded-full flex items-center justify-center mr-md flex-shrink-0 ${isCheckIn ? 'bg-primary-soft text-primary' : 'bg-bloom-rose text-bloom-deep'}`}>
                             {isCheckIn ? <ArrowRightCircle size={20} /> : <ArrowLeftCircle size={20} />}
@@ -399,7 +414,7 @@ export const DashboardPage = () => {
           </div>
 
           {/* Occupancy Summary Table */}
-          <div className="bg-paper border border-fog rounded-xl shadow-soft-lift overflow-hidden flex flex-col h-[600px]">
+          <div className="bg-paper border-none rounded-xl shadow-lg shadow-primary/5 overflow-hidden flex flex-col h-[600px] ring-1 ring-fog/50">
             <div className="p-xl border-b border-fog bg-cloud flex justify-between items-center">
               <h2 className="text-display-xs flex items-center">
                  <Users className="text-primary mr-sm" size={20} /> {t('currently_inside')}
@@ -422,7 +437,7 @@ export const DashboardPage = () => {
                {occupancy.length > 0 ? (
                  <div className="divide-y divide-fog">
                     {occupancy.map((log) => (
-                      <div key={log.session_id} className="occupancy-item p-xl hover:bg-cloud transition-colors flex items-center justify-between group" data-name={log.full_name}>
+                      <div key={log.session_id} className="occupancy-item p-xl hover:bg-cloud transition-all duration-300 flex items-center justify-between group hover:translate-x-1 hover:shadow-sm cursor-pointer" data-name={log.full_name}>
                         <div className="flex items-center min-w-0">
                           <div className="w-10 h-10 rounded-full border border-steel bg-cloud flex-shrink-0 overflow-hidden mr-md">
                             {log.entry_photo || log.avatar_url ? (
@@ -494,29 +509,72 @@ export const DashboardPage = () => {
                   </div>
 
                   <div className="flex-1 space-y-xs min-w-0">
-                    <p className="text-caption-bold text-graphite uppercase tracking-widest">Personnel</p>
+                    <p className="text-caption-bold text-graphite uppercase tracking-widest">{t('sidebar.personnel')}</p>
                     <p className="text-body-emphasis truncate">{req.full_name}</p>
                     
-                    <p className="text-caption-bold text-graphite uppercase tracking-widest mt-md">Hardware</p>
+                    <p className="text-caption-bold text-graphite uppercase tracking-widest mt-md">{t('devices')}</p>
                     <p className="text-body-md text-primary font-bold truncate">{req.brand} {req.model_name}</p>
                     <p className="text-[10px] text-graphite font-mono truncate">SN: {req.serial_number}</p>
                   </div>
                 </div>
 
-                <div className="p-md bg-cloud border-t border-fog flex gap-md">
-                  <button
-                    onClick={() => handleRejectQuickReg(req)}
-                    className="flex-1 py-sm button-label-md text-bloom-deep border border-bloom-coral/30 rounded-md hover:bg-bloom-rose/20 transition"
-                  >
-                    Reject
-                  </button>
-                  <button
-                    onClick={() => handleApproveQuickReg(req)}
-                    className="flex-2 py-sm button-label-md bg-primary text-on-ink rounded-md shadow-soft-lift hover:bg-primary-deep transition"
-                  >
-                    Authorize Entry
-                  </button>
-                </div>
+                {rejectingSerials[req.serial_number] !== undefined ? (
+                  <div className="p-xl bg-canvas border-t border-fog space-y-md">
+                    <p className="text-caption-bold text-bloom-deep uppercase tracking-widest">
+                      {t('devices.reject_reason') || 'Lý do từ chối'}
+                    </p>
+                    <textarea
+                      value={rejectingSerials[req.serial_number]}
+                      onChange={(e) => setRejectingSerials(prev => ({ ...prev, [req.serial_number]: e.target.value }))}
+                      placeholder={t('placeholders.type_here') || 'Nhập lý do tại đây...'}
+                      className="w-full p-sm text-body-md border border-bloom-coral/30 rounded-md bg-paper focus:outline-none focus:ring-2 focus:ring-bloom-coral/20 resize-none h-20"
+                      autoFocus
+                    />
+                    <div className="flex gap-md">
+                      <button
+                        onClick={() => {
+                          setRejectingSerials(prev => {
+                            const copy = { ...prev };
+                            delete copy[req.serial_number];
+                            return copy;
+                          });
+                        }}
+                        className="flex-1 py-sm button-label-md text-graphite border border-fog rounded-md hover:bg-cloud transition"
+                      >
+                        {t('modal.cancel') || 'Hủy'}
+                      </button>
+                      <button
+                        onClick={() => {
+                          const reason = rejectingSerials[req.serial_number];
+                          handleRejectQuickReg(req, reason);
+                          setRejectingSerials(prev => {
+                            const copy = { ...prev };
+                            delete copy[req.serial_number];
+                            return copy;
+                          });
+                        }}
+                        className="flex-1 py-sm button-label-md bg-bloom-coral text-white rounded-md shadow-soft-lift hover:bg-bloom-wine transition"
+                      >
+                        {t('common.confirm') || 'Xác nhận'}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-md bg-cloud border-t border-fog flex gap-md">
+                    <button
+                      onClick={() => setRejectingSerials(prev => ({ ...prev, [req.serial_number]: '' }))}
+                      className="flex-1 py-sm button-label-md text-bloom-deep border border-bloom-coral/30 rounded-md hover:bg-bloom-rose/20 transition"
+                    >
+                      {t('dashboard.reject')}
+                    </button>
+                    <button
+                      onClick={() => handleApproveQuickReg(req)}
+                      className="flex-2 py-sm button-label-md bg-primary text-on-ink rounded-md shadow-soft-lift hover:bg-primary-deep transition"
+                    >
+                      {t('dashboard.authorize_entry')}
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
           </div>

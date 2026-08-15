@@ -1,133 +1,124 @@
-# 🛡️ R&D Access Management System (Innovation Nexus)
+# R&D Access Management System
 
-Hệ thống quản lý ra vào khu vực R&D (Nghiên cứu & Phát triển) độ phân giải cao, được thiết kế theo tiêu chuẩn an ninh cấp doanh nghiệp (Enterprise-grade Security). Hệ thống tự động hóa toàn bộ quy trình từ khai báo tài sản, phê duyệt, đến kiểm soát ra vào theo thời gian thực tại các trạm Kiosk.
+Full-stack access control system for managing people, devices, check-in/check-out sessions, and security monitoring in an R&D room environment.
 
-![R&D Access Banner](https://via.placeholder.com/1200x400/0F2C59/FFFFFF?text=R%26D+Access+Management+System)
+This project was developed as an internship-oriented academic project for improving the equipment access control workflow at HCLTech Vietnam. It replaces manual device verification with a web-based process covering employee authentication, registered device validation, kiosk scanning, approval handling, and real-time monitoring for security staff.
 
-## ✨ Tính năng nổi bật
+## My Role
 
-### 1. Trạm Kiosk An ninh (Lối vào R&D)
-- **Xác thực Đa lớp (MFA):** Hỗ trợ quét mã QR thẻ nhân viên hoặc Đăng nhập thủ công qua tài khoản Active Directory.
-- **Quét Mã vạch/QR Tốc độ cao:** Tích hợp engine `html5-qrcode` độc quyền được tinh chỉnh chỉ nhận diện mã QR (tránh nhiễu loạn môi trường), cho tốc độ quét cực nhanh.
-- **Xác thực Tài sản (Asset Verification):** Quét mã QR thiết bị cá nhân để đối chiếu với danh sách đã được phê duyệt.
-- **Đăng ký Nhanh (Quick Register):** Tích hợp Camera độ nét cao (`react-webcam`) cho phép chụp ảnh thiết bị lạ và gửi yêu cầu phê duyệt tức thì đến bảo vệ.
-- **Giao diện Cao cấp:** Thiết kế UI/UX hiện đại với hiệu ứng Glassmorphism, Animations mượt mà và Hỗ trợ Đa ngôn ngữ (Anh/Việt) tự động.
+Full-stack Developer / System Analyst
 
-### 2. Trung tâm Giám sát Thời gian thực (Dashboard Bảo vệ)
-- **Live Kiosk Monitor:** Giám sát luồng người ra vào Kiosk theo thời gian thực thông qua kết nối `Socket.IO` tốc độ cao.
-- **Cảnh báo Thông minh:** Khi có thiết bị lạ xâm nhập, hệ thống tự động đẩy cảnh báo thẻ đỏ kèm hình ảnh chân dung (hỗ trợ truyền tải băng thông lớn lên đến 100MB) và phát âm thanh báo động.
-- **Thống kê Lưu lượng:** Biểu đồ lượng người ra vào và số lượng thiết bị đang nằm trong khu vực R&D.
+- Analyzed the current R&D access control workflow and translated business rules into user flows, role permissions, database entities, and API behavior.
+- Designed and implemented the React frontend for engineer, security, manager, admin, and auditor workflows.
+- Built the Node.js/Express backend with authentication, RBAC middleware, PostgreSQL data models, and REST APIs.
+- Implemented real-time security events with Socket.IO for kiosk scan updates and quick device registration alerts.
+- Developed QR-based device/user flows, device approval management, access logs, session tracking, audit views, and multilingual UI support.
+- Prepared technical documentation, setup guides, architecture notes, and business process materials for project evaluation.
 
-### 3. Cổng thông tin Cán bộ / Kỹ sư
-- Khai báo thiết bị, laptop cá nhân.
-- Xem lịch sử ra vào và phiên làm việc hiện tại.
-- Quản lý mã QR cá nhân và thiết bị.
+## Business Problem
 
----
+R&D areas require stricter control over which employees and devices can enter the room. Manual checks are slow, hard to audit, and can miss unregistered equipment. This system supports a more traceable process:
 
-## 🛠️ Ngăn xếp Công nghệ (Tech Stack)
+- Employees register devices before entering the R&D room.
+- Security staff verify user identity and device QR codes at a kiosk.
+- Unregistered devices trigger a quick registration and approval flow.
+- Managers/security users review pending device requests.
+- Auditors can review access sessions and activity logs.
 
-### 💻 Frontend
-- **Core:** React 18, Vite
-- **State Management:** Zustand
-- **Styling:** Tailwind CSS (với bộ màu tuỳ chỉnh chuyên nghiệp `bloom`, `ink`, `paper`)
-- **Quốc tế hóa (i18n):** `react-i18next` (Anh / Việt)
-- **Tương tác phần cứng:** `html5-qrcode` (Quét mã), `react-webcam` (Chụp ảnh)
-- **Giao tiếp:** Axios, Socket.IO-Client
+## Key Features
 
-### ⚙️ Backend
-- **Core:** Node.js, Express.js
-- **Database:** PostgreSQL v12+
-- **Real-time Engine:** Socket.IO (Cấu hình `maxHttpBufferSize` 100MB cho truyền tải hình ảnh HD)
-- **Authentication:** JWT (JSON Web Tokens), bcryptjs
-- **Logging & Security:** Helmet, CORS, Custom Access Logs
+- Role-based login for engineer, security, manager, admin, and auditor users.
+- QR login and QR device verification flows.
+- Kiosk check-in/check-out screen for R&D room entry control.
+- Device registration, approval, rejection, and QR tag generation.
+- Real-time security dashboard using Socket.IO.
+- Access session tracking, occupancy status, and personal activity history.
+- Admin/auditor pages for users, sessions, activity logs, and audit logs.
+- Camera capture support for quick registration evidence.
+- Multilingual interface with English and Vietnamese resources.
 
----
+## Tech Stack
 
-## 🚀 Hướng dẫn Cài đặt & Vận hành
+| Layer | Technologies |
+| --- | --- |
+| Frontend | React 18, React Router, Tailwind CSS, Zustand, Axios |
+| UI & Data | Recharts, Lucide React, react-icons, xlsx, jsPDF |
+| QR / Camera | html5-qrcode, qrcode.react, camera capture flow |
+| Backend | Node.js, Express.js, REST API |
+| Database | PostgreSQL, `pg` |
+| Auth & Security | JWT, bcryptjs, Helmet, CORS, role-based middleware |
+| Real-time | Socket.IO, Socket.IO Client |
+| i18n | i18next, react-i18next |
 
-### Yêu cầu môi trường
-- Node.js v18+
-- PostgreSQL v12+
-- Trình duyệt hiện đại có cấp quyền truy cập Camera.
+## Main User Flows
 
-### 1. Cài đặt Backend
+```text
+Engineer
+  Login -> Register device -> Generate QR tag -> View personal access history
+
+Security
+  Kiosk scan -> Verify employee/device -> Approve quick registration -> Monitor live activity
+
+Manager/Admin
+  Review device requests -> Manage users -> Track occupancy/sessions -> Force-close sessions
+
+Auditor
+  View audit dashboard -> Review access logs and session records
+```
+
+## Project Structure
+
+```text
+R-D-Access-System/
+├── backend/          # Express API, PostgreSQL models, routes, controllers
+├── frontend/         # React UI, pages, stores, services, i18n resources
+├── docs/             # Architecture, setup, workflow and project documentation
+├── start-system.bat  # Local startup helper for Windows
+└── README.md
+```
+
+## Run Locally
+
+Backend:
+
 ```bash
 cd backend
-
-# Copy file cấu hình môi trường và chỉnh sửa thông tin Database
-cp .env.example .env
-
-# Cài đặt thư viện
 npm install
-
-# Khởi tạo CSDL và Data mẫu
+cp .env.example .env
 npm run migrate
 npm run seed
-
-# Khởi động Server (Port mặc định: 5000)
 npm run dev
 ```
 
-### 2. Cài đặt Frontend
+Frontend:
+
 ```bash
 cd frontend
-
-# Cài đặt thư viện
 npm install
-
-# Khởi động Frontend Server (Port mặc định: 3000)
+cp .env.example .env
 npm start
 ```
 
----
+Default local URLs:
 
-## 🔐 Tài khoản Demo
+- Frontend: `http://localhost:3000`
+- Backend API: `http://localhost:5000/api`
+- Backend health check: `http://localhost:5000/health`
 
-| Vai trò (Role) | Username | Password |
-|------|----------|----------|
-| **Kỹ sư / Nhân viên** | `engineer1` | `engineer123` |
-| **Bảo vệ / An ninh** | `admin` | `admin123` |
-| **Quản lý** | `project_manager` | `manager123` |
+## Demo Accounts
 
----
+| Role | Username | Password |
+| --- | --- | --- |
+| Engineer | `engineer1` | `engineer123` |
+| Security | `admin` | `admin123` |
+| Manager | `project_manager` | `manager123` |
 
-## 📂 Cấu trúc Thư mục Chính
+## Documentation
 
-```text
-RD_Access/
-├── backend/
-│   ├── src/
-│   │   ├── config/          # Kết nối DB, Cấu hình môi trường
-│   │   ├── controllers/     # Xử lý Logic nghiệp vụ (Access, Auth, Devices)
-│   │   ├── database/        # Schema PostgreSQL (V2)
-│   │   ├── routes/          # Express Routes
-│   │   └── index.js         # Khởi tạo Express & Socket.IO
-│   └── package.json
-│
-└── frontend/
-    ├── src/
-    │   ├── components/      # UI Components (QRScanner, LanguageSwitcher...)
-    │   ├── locales/         # JSON Đa ngôn ngữ (en.json, vi.json)
-    │   ├── pages/           # Kiosk, Dashboard, Login...
-    │   ├── services/        # Gọi API Backend
-    │   ├── store/           # Zustand Stores (authStore, languageStore)
-    │   └── styles/          # Cấu hình TailwindCSS Token
-    └── package.json
-```
+Project documents are organized in [`docs/`](docs/README.md), including architecture, setup guide, user flows, interaction design, multilingual implementation, and project completion notes.
 
----
+## Notes
 
-## 🚧 Lưu ý Vận hành (Troubleshooting)
-
-1. **Không nhận Camera trên Kiosk:**
-   - Trình duyệt sẽ tự động chặn Camera nếu chạy qua `http://` thay vì `https://` (ngoại trừ `localhost`). Đảm bảo hệ thống được deploy với chứng chỉ SSL/HTTPS.
-   
-2. **Cảnh báo lỗi QR liên tục (False Alarms):**
-   - Đảm bảo `components/QRScanner.jsx` luôn giữ cấu hình `formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE]`. Việc gỡ bỏ dòng này có thể khiến Camera nhận diện nhầm các họa tiết sọc ngang/dọc trong môi trường thành mã vạch 1D, dẫn đến rác dữ liệu.
-
-3. **Mất tín hiệu Cảnh báo Real-time:**
-   - Đảm bảo Socket.io trên Backend (`index.js`) giữ nguyên giá trị `maxHttpBufferSize: 1e8`. Hình ảnh truyền tải từ Kiosk dưới dạng Base64 thường lớn hơn 1MB, nếu không có cấu hình này, Server sẽ tự động ngắt kết nối.
-
----
-*Phát triển bởi Đội ngũ R&D Node - 2026*
+- Runtime secrets are not committed. Use `.env.example` files as templates.
+- The committed Supabase values were replaced with placeholders; configure a personal Supabase project if you want to use Supabase-related frontend services.
+- Camera access requires browser permission and works best on `localhost` or HTTPS.
